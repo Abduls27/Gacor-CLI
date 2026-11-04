@@ -10,11 +10,11 @@ $uninstallPath = "$installDir\uninstall.ps1"
 $regPath       = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\gacor"
 
 # 0. Get the latest release info from GitHub
-Write-Host "→ Checking latest version..." -ForegroundColor Cyan
+Write-Host "-> Checking latest version..." -ForegroundColor Cyan
 try {
     $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest"
 } catch {
-    Write-Host "✗ Failed to fetch release information. Check your internet connection or repository name." -ForegroundColor Red
+    Write-Host "x Failed to fetch release information. Check your internet connection or repository name." -ForegroundColor Red
     exit 1
 }
 
@@ -22,7 +22,7 @@ $appVersion = $release.tag_name.TrimStart("v")
 $asset = $release.assets | Where-Object { $_.name -eq "gacor.exe" }
 
 if (-not $asset) {
-    Write-Host "✗ The gacor.exe binary was not found in release $($release.tag_name)." -ForegroundColor Red
+    Write-Host "x The gacor.exe binary was not found in release $($release.tag_name)." -ForegroundColor Red
     exit 1
 }
 
@@ -34,21 +34,21 @@ $isUpdate = $null -ne $existing
 $oldVersion = if ($isUpdate) { $existing.DisplayVersion } else { $null }
 
 if ($isUpdate -and $oldVersion -eq $appVersion) {
-    Write-Host "⚡ gacor $appVersion is already up to date. Nothing to update." -ForegroundColor Yellow
+    Write-Host "* gacor $appVersion is already up to date. Nothing to update." -ForegroundColor Yellow
     Write-Host "  Run again with -Force if you still want to reinstall." -ForegroundColor Gray
     if (-not $env:GACOR_FORCE) {
         exit 0
     }
 } elseif ($isUpdate) {
-    Write-Host "⚡ Updating gacor $oldVersion → $appVersion ..." -ForegroundColor Green
+    Write-Host "* Updating gacor $oldVersion -> $appVersion ..." -ForegroundColor Green
 } else {
-    Write-Host "⚡ Installing gacor $appVersion..." -ForegroundColor Green
+    Write-Host "* Installing gacor $appVersion..." -ForegroundColor Green
 }
 
 # 2. VC Redist
 $vc = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" -ErrorAction SilentlyContinue
 if (-not $vc -or $vc.Installed -ne 1) {
-    Write-Host "→ Installing Visual C++ Redistributable..." -ForegroundColor Cyan
+    Write-Host "-> Installing Visual C++ Redistributable..." -ForegroundColor Cyan
     $vcPath = "$env:TEMP\vc_redist.x64.exe"
     Invoke-WebRequest "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile $vcPath
     Start-Process $vcPath -ArgumentList "/install","/quiet","/norestart" -Wait -Verb RunAs
@@ -56,20 +56,20 @@ if (-not $vc -or $vc.Installed -ne 1) {
 
 # 3. Stop running processes so the exe is not locked during overwrite
 if ($isUpdate) {
-    Write-Host "→ Stopping running services..." -ForegroundColor Cyan
+    Write-Host "-> Stopping running services..." -ForegroundColor Cyan
     Get-Process php-cgi, nginx, gacor -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 500
 }
 
 # 4. Download the binary from the GitHub Release
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
-Write-Host "→ Downloading gacor.exe ($appVersion)..." -ForegroundColor Cyan
+Write-Host "-> Downloading gacor.exe ($appVersion)..." -ForegroundColor Cyan
 $tmpExe = "$exePath.download"
 try {
     Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpExe
     Move-Item -Path $tmpExe -Destination $exePath -Force
 } catch {
-    Write-Host "✗ Failed to download/overwrite gacor.exe — the file may still be in use by another process." -ForegroundColor Red
+    Write-Host "x Failed to download/overwrite gacor.exe - the file may still be in use by another process." -ForegroundColor Red
     Write-Host "  Close all terminals running gacor, then try again." -ForegroundColor Gray
     if (Test-Path $tmpExe) { Remove-Item $tmpExe -Force -ErrorAction SilentlyContinue }
     exit 1
@@ -126,9 +126,9 @@ Set-ItemProperty -Path $regPath -Name "EstimatedSize"   -Value 20000 -Type DWord
 
 Write-Host ""
 if ($isUpdate) {
-    Write-Host ('✓ gacor was successfully updated to ' + $appVersion) -ForegroundColor Green
+    Write-Host ('OK gacor was successfully updated to ' + $appVersion) -ForegroundColor Green
 } else {
-    Write-Host ('✓ gacor ' + $appVersion + ' is installed in ' + $installDir) -ForegroundColor Green
+    Write-Host ('OK gacor ' + $appVersion + ' is installed in ' + $installDir) -ForegroundColor Green
 }
 Write-Host "  Open a new terminal, then run: gacor" -ForegroundColor Gray
 Write-Host "  To uninstall, search for 'gacor' in Settings > Apps, or run uninstall.ps1" -ForegroundColor Gray

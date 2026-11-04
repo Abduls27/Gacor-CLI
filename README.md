@@ -16,9 +16,11 @@
 </p>
 
 
-![Go](https://img.shields.io/badge/language-Go-00ADD8?logo=go&logoColor=white)
-[![Release](https://img.shields.io/github/v/release/Abduls27/Gacor-CLI)](https://github.com/Abduls27/Gacor-CLI/releases/latest)
-[![License](https://img.shields.io/github/license/Abduls27/Gacor-CLI)](https://github.com/Abduls27/Gacor-CLI/blob/main/LICENSE)
+<p align="center">
+  <img src="https://img.shields.io/badge/language-Go-00ADD8?logo=go&logoColor=white" alt="Go" />
+  <a href="https://github.com/Abduls27/Gacor-CLI/releases/latest"><img src="https://img.shields.io/github/v/release/Abduls27/Gacor-CLI" alt="Release" /></a>
+  <a href="https://github.com/Abduls27/Gacor-CLI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Abduls27/Gacor-CLI" alt="License" /></a>
+</p>
 
 ## Requirements & Installation
 

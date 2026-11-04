@@ -232,7 +232,7 @@ func manageDatabases(instance database.Instance) error {
 			}
 			ui.Success(fmt.Sprintf("Database %s deleted successfully", result.DatabaseName))
 
-		default: // DatabaseActionNone — return to the GACOR home menu
+		default:
 			return nil
 		}
 	}

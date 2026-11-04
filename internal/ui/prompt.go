@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var ErrPromptCancelled = errors.New("prompt dibatalkan")
+var ErrPromptCancelled = errors.New("prompt canceled")
 
 type promptModel struct {
 	input         textinput.Model
@@ -42,8 +42,8 @@ func (m promptModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m promptModel) View() string {
 	body := titleStyle.Render(m.title) + "\n\n" + m.input.View()
-	hints := bright.Render("enter") + muted.Render(" konfirmasi  ") +
-		bright.Render("esc") + muted.Render(" batal")
+	hints := bright.Render("enter") + muted.Render(" confirm  ") +
+		bright.Render("esc") + muted.Render(" cancel")
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		logo(), "",
 		panel.Render(body),
@@ -72,7 +72,7 @@ func PromptInput(title string, secret bool) (string, error) {
 		ti.EchoCharacter = '•'
 		ti.Placeholder = "Password"
 	} else {
-		ti.Placeholder = "Ketik di sini..."
+		ti.Placeholder = "Type here..."
 		ti.Width = 60
 	}
 

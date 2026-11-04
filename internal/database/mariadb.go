@@ -73,7 +73,7 @@ func (driver mariaDBDriver) InitializeAndStart(ctx context.Context, instance Ins
 	if err := ctx.Err(); err != nil {
 		if stopErr := runMySQLAdmin(installDir, instance, "root", password, "shutdown"); stopErr != nil {
 			_ = process.Stop("database")
-			return fmt.Errorf("%w; gagal menghentikan MariaDB setelah pembatalan: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop MariaDB after cancellation: %v", err, stopErr)
 		}
 		return err
 	}
@@ -92,7 +92,7 @@ func initializeMariaDB(ctx context.Context, installDir, dataDir string, port int
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("gagal inisialisasi MariaDB: %w: %s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("failed to initialize MariaDB: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func fetchMariaDB() ([]Release, error) {
 	const apiURL = "https://downloads.mariadb.org/rest-api/mariadb/"
 	var root mariaRoot
 	if err := fetchJSON(apiURL, &root); err != nil {
-		return nil, fmt.Errorf("gagal mengambil versi MariaDB dari downloads.mariadb.org: %w", err)
+		return nil, fmt.Errorf("failed to fetch MariaDB versions from downloads.mariadb.org: %w", err)
 	}
 
 	seen := map[string]bool{}
@@ -130,7 +130,7 @@ func fetchMariaDB() ([]Release, error) {
 		}
 		var data mariaTrack
 		if err := fetchJSON(apiURL+url.PathEscape(track.ReleaseID)+"/", &data); err != nil {
-			return nil, fmt.Errorf("gagal membaca metadata MariaDB %s: %w", track.ReleaseID, err)
+			return nil, fmt.Errorf("failed to read MariaDB metadata for %s: %w", track.ReleaseID, err)
 		}
 		for version, info := range data.Releases {
 			for _, file := range info.Files {
@@ -148,7 +148,7 @@ func fetchMariaDB() ([]Release, error) {
 		}
 	}
 	if len(releases) == 0 {
-		return nil, fmt.Errorf("API resmi MariaDB tidak mengembalikan arsip Windows x64")
+		return nil, fmt.Errorf("the official MariaDB API did not return a Windows x64 archive")
 	}
 	return latestPerSeries(releases), nil
 }

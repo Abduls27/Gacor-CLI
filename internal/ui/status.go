@@ -7,13 +7,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ServiceStatus menampung data satu service (PHP, Nginx, atau database) buat ditampilkan di status screen.
+// ServiceStatus holds data for a service (PHP, Nginx, or a database) displayed on the status screen.
 type ServiceStatus struct {
 	Label   string // "PHP", "Nginx", "MySQL"
 	Version string
 	Running bool
-	PID     int    // 0 kalau tidak ada PID (misal database belum running)
-	Detail  string // opsional, misal "127.0.0.1:3306" buat database; kosongkan kalau tidak perlu
+	PID     int    // 0 if no PID is available (e.g. the database is not running)
+	Detail  string // Optional, e.g. "127.0.0.1:3306" for a database; leave empty if unused.
 }
 
 type statusModel struct {
@@ -101,7 +101,7 @@ func (m statusModel) View() string {
 		cards = append(cards, statusCard(s))
 	}
 
-	// Susun cards 2 per baris biar rapi seperti opencode grid
+	// Arrange cards in rows of two to match the OpenCode grid layout.
 	var rows []string
 	for i := 0; i < len(cards); i += 2 {
 		if i+1 < len(cards) {
@@ -128,7 +128,7 @@ func (m statusModel) View() string {
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, mainContent)
 }
 
-// ShowStatus menampilkan TUI fullscreen status service, mirip layout home.go.
+// ShowStatus displays a full-screen service status TUI, similar to the layout in home.go.
 func ShowStatus(services []ServiceStatus) error {
 	_, err := tea.NewProgram(
 		statusModel{services: services},

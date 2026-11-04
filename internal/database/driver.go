@@ -56,7 +56,7 @@ var drivers = map[Engine]Driver{
 func driverFor(engine Engine) (Driver, error) {
 	driver, ok := drivers[engine]
 	if !ok {
-		return nil, fmt.Errorf("database tidak didukung: %s", string(engine))
+		return nil, fmt.Errorf("unsupported database: %s", string(engine))
 	}
 	return driver, nil
 }
@@ -153,10 +153,10 @@ func validateInstanceForInitialization(ctx context.Context, instance Instance) e
 		return err
 	}
 	if instance.Port < 1 || instance.Port > 65535 {
-		return fmt.Errorf("port database tidak valid: %d", instance.Port)
+		return fmt.Errorf("invalid database port: %d", instance.Port)
 	}
 	if portInUse(instance.Port) {
-		return fmt.Errorf("port %d sudah digunakan; hentikan aplikasi lain yang memakai port ini sebelum setup", instance.Port)
+		return fmt.Errorf("port %d is already in use; stop other applications using this port before setup", instance.Port)
 	}
 	return nil
 }
@@ -167,7 +167,7 @@ func ensureEmptyDataDirectory(instance Instance, dataDir string) error {
 		return err
 	}
 	if _, err := os.Stat(filepath.Join(dataDir, driver.DataDirectoryMarker())); err == nil {
-		return fmt.Errorf("data %s sudah ada di %s; gunakan database yang sudah diinisialisasi atau pilih versi lain", instance.Engine, dataDir)
+		return fmt.Errorf("%s data already exists at %s; use the initialized database or choose another version", instance.Engine, dataDir)
 	} else if !os.IsNotExist(err) {
 		return err
 	}

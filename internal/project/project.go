@@ -32,15 +32,15 @@ func ListProjects(cfg *config.Config) []string {
 func AddFolder(cfg *config.Config, path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("folder tidak ditemukan: %s", path)
+		return fmt.Errorf("directory not found: %s", path)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("path bukan folder: %s", path)
+		return fmt.Errorf("path is not a directory: %s", path)
 	}
 	// Check duplicate
 	for _, f := range cfg.ProjectFolders {
 		if f == path {
-			return fmt.Errorf("folder sudah terdaftar")
+			return fmt.Errorf("directory is already registered")
 		}
 	}
 	cfg.ProjectFolders = append(cfg.ProjectFolders, path)
@@ -50,22 +50,22 @@ func AddFolder(cfg *config.Config, path string) error {
 func ChangeFolder(cfg *config.Config, oldPath, newPath string) error {
 	info, err := os.Stat(newPath)
 	if err != nil {
-		return fmt.Errorf("folder tidak ditemukan: %s", newPath)
+		return fmt.Errorf("directory not found: %s", newPath)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("path bukan folder: %s", newPath)
+		return fmt.Errorf("path is not a directory: %s", newPath)
 	}
 
 	for i, f := range cfg.ProjectFolders {
 		if f == oldPath {
 			for j, existing := range cfg.ProjectFolders {
 				if j != i && existing == newPath {
-					return fmt.Errorf("folder sudah terdaftar: %s", newPath)
+					return fmt.Errorf("directory is already registered: %s", newPath)
 				}
 			}
 			cfg.ProjectFolders[i] = newPath
 			return cfg.Save()
 		}
 	}
-	return fmt.Errorf("folder tidak ditemukan di config: %s", oldPath)
+	return fmt.Errorf("directory not found in configuration: %s", oldPath)
 }

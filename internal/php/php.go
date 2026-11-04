@@ -31,18 +31,18 @@ func DownloadFromURL(version, url string, cfg *config.Config, onEvent func(stage
 	}
 
 	if err := downloadFileWithProgress(zipPath, url, "PHP "+version, onEvent); err != nil {
-		return fmt.Errorf("download gagal: %w", err)
+		return fmt.Errorf("download failed: %w", err)
 	}
 
 	onEvent("extract", "PHP "+version, 0, 0)
 	if err := unzip(zipPath, destDir); err != nil {
-		return fmt.Errorf("extract gagal: %w", err)
+		return fmt.Errorf("extraction failed: %w", err)
 	}
 	os.Remove(zipPath)
 
 	onEvent("configure", "PHP "+version, 0, 0)
 	if err := ConfigurePHPIni(version, cfg); err != nil {
-		fmt.Printf("Warning: gagal setup php.ini: %s\n", err)
+		fmt.Printf("Warning: failed to configure php.ini: %s\n", err)
 	}
 
 	return nil
@@ -73,14 +73,14 @@ func ConfigurePHPIni(version string, cfg *config.Config) error {
 	devIni := filepath.Join(phpDir, "php.ini-development")
 	iniPath := filepath.Join(phpDir, "php.ini")
 
-	// Kalau php.ini sudah ada, skip (jangan timpa setting manual user)
+	// Skip if php.ini already exists; do not overwrite the user's manual settings.
 	if _, err := os.Stat(iniPath); err == nil {
 		return nil
 	}
 
 	data, err := os.ReadFile(devIni)
 	if err != nil {
-		return fmt.Errorf("gagal baca php.ini-development: %w", err)
+		return fmt.Errorf("failed to read php.ini-development: %w", err)
 	}
 	content := string(data)
 
@@ -109,7 +109,7 @@ func ConfigurePHPIni(version string, cfg *config.Config) error {
 		content = strings.Replace(content, old, new, 1)
 	}
 
-	// Setting tambahan ala Herd — upload besar, memory cukup, timezone, error display
+	// Additional Herd-style settings for upload size, memory, timezone, and error display.
 	extra := fmt.Sprintf(`
 ; --- gacor defaults ---
 upload_max_filesize = %s
@@ -144,8 +144,8 @@ opcache.use_cwd=1
 	return os.WriteFile(iniPath, []byte(content), 0644)
 }
 
-// InstalledVersions mengembalikan semua versi PHP yang ada di folder bin,
-// misal ["8.3.14", "8.4.26"]
+// InstalledVersions returns all PHP versions in the bin directory,
+// e.g. ["8.3.14", "8.4.26"].
 func InstalledVersions() ([]string, error) {
 	entries, err := os.ReadDir(config.PHPDir())
 	if err != nil {
@@ -168,9 +168,8 @@ func InstalledVersions() ([]string, error) {
 	return out, nil
 }
 
-// RemoveVersion menghapus folder instalasi PHP versi tertentu
+// RemoveVersion removes the installation directory for the specified PHP version.
 func RemoveVersion(version string) error {
 	dir := filepath.Join(config.PHPDir(), "php-"+version)
 	return os.RemoveAll(dir)
 }
-

@@ -38,7 +38,7 @@ func ValidIdentifier(value string) bool {
 
 func validateSetupIdentifiers(name, user string) error {
 	if !ValidIdentifier(name) || !ValidIdentifier(user) {
-		return fmt.Errorf("nama database dan user hanya boleh berisi huruf, angka, dan underscore; karakter pertama harus huruf atau underscore")
+		return fmt.Errorf("database and user names may only contain letters, numbers, and underscores; the first character must be a letter or underscore")
 	}
 	return nil
 }
@@ -56,7 +56,7 @@ func InstallArchive(ctx context.Context, release Release, engine Engine, onEvent
 		return "", err
 	}
 	if strings.TrimSpace(release.Version) == "" || strings.TrimSpace(release.URL) == "" {
-		return "", fmt.Errorf("metadata versi %s tidak lengkap", engine)
+		return "", fmt.Errorf("incomplete %s version metadata", engine)
 	}
 
 	root := filepath.Join(config.BinDir(), "database", string(engine))
@@ -79,7 +79,7 @@ func InstallArchive(ctx context.Context, release Release, engine Engine, onEvent
 	}
 	onEvent("extract", engine.String()+" "+release.Version, 0, 0)
 	if err := extractZip(ctx, archivePath, installDir); err != nil {
-		return "", fmt.Errorf("gagal extract %s %s: %w", engine, release.Version, err)
+		return "", fmt.Errorf("failed to extract %s %s: %w", engine, release.Version, err)
 	}
 	if _, err := driver.FindServer(installDir); err != nil {
 		return "", err
@@ -100,11 +100,11 @@ func downloadArchive(ctx context.Context, dest, source, label string, onEvent fu
 	req.Header.Set("User-Agent", "gacor database manager")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("gagal mengunduh %s: %w", label, err)
+		return fmt.Errorf("failed to download %s: %w", label, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("gagal mengunduh %s: server merespons HTTP %d", label, resp.StatusCode)
+		return fmt.Errorf("failed to download %s: server returned HTTP %d", label, resp.StatusCode)
 	}
 	if onEvent == nil {
 		onEvent = func(string, string, int64, int64) {}
@@ -161,7 +161,7 @@ func extractZip(ctx context.Context, source, destination string) error {
 		target := filepath.Join(root, filepath.FromSlash(entry.Name))
 		relative, err := filepath.Rel(root, target)
 		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-			return fmt.Errorf("arsip memuat path di luar direktori instalasi: %q", entry.Name)
+			return fmt.Errorf("archive contains a path outside the installation directory: %q", entry.Name)
 		}
 		if entry.FileInfo().IsDir() {
 			if err := os.MkdirAll(target, 0755); err != nil {
@@ -232,7 +232,7 @@ func findExecutable(root string, names ...string) (string, error) {
 		return "", err
 	}
 	if found == "" {
-		return "", fmt.Errorf("arsip %s tidak memuat executable %s", root, strings.Join(names, " atau "))
+		return "", fmt.Errorf("archive %s does not contain any of the executables %s", root, strings.Join(names, " or "))
 	}
 	return found, nil
 }
@@ -267,7 +267,7 @@ func parseDatabaseList(output string, port int) ([]DatabaseInfo, error) {
 		}
 		fields := strings.SplitN(line, "\t", 2)
 		if len(fields) != 2 || strings.TrimSpace(fields[0]) == "" {
-			return nil, fmt.Errorf("format daftar database tidak valid: %q", line)
+			return nil, fmt.Errorf("invalid database list format: %q", line)
 		}
 		user := strings.TrimSpace(fields[1])
 		if user == "" {
@@ -308,7 +308,7 @@ func waitForPort(ctx context.Context, port int) error {
 		case <-time.After(250 * time.Millisecond):
 		}
 	}
-	return fmt.Errorf("database tidak membuka port %d setelah 45 detik", port)
+	return fmt.Errorf("database did not open port %d after 45 seconds", port)
 }
 
 func environmentWith(key, value string) []string {
@@ -339,5 +339,5 @@ func waitForPortClosed(port int) error {
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
-	return fmt.Errorf("database masih menerima koneksi pada port %d setelah perintah stop", port)
+	return fmt.Errorf("database is still accepting connections on port %d after the stop command", port)
 }

@@ -13,7 +13,7 @@ import (
 func FetchAvailableVersions() (map[string]string, error) {
 	resp, err := http.Get("https://nginx.org/en/download.html")
 	if err != nil {
-		return nil, fmt.Errorf("gagal fetch nginx.org: %w", err)
+		return nil, fmt.Errorf("failed to fetch nginx.org: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -26,23 +26,23 @@ func FetchAvailableVersions() (map[string]string, error) {
 	re := regexp.MustCompile(`nginx-(\d+\.\d+\.\d+)\.zip$`)
 
 	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
-    href, _ := s.Attr("href")
-    if !strings.HasSuffix(href, ".zip") {
-        return
-    }
-    matches := re.FindStringSubmatch(href)
-    if len(matches) < 2 {
-        return
-    }
-    full := matches[1] // "1.8.1"
+		href, _ := s.Attr("href")
+		if !strings.HasSuffix(href, ".zip") {
+			return
+		}
+		matches := re.FindStringSubmatch(href)
+		if len(matches) < 2 {
+			return
+		}
+		full := matches[1] // "1.8.1"
 
-    url := href
-    if !strings.HasPrefix(url, "http") {
-        url = "https://nginx.org" + url
-    }
-    if _, exists := versions[full]; !exists {
-        versions[full] = url
-    }
+		url := href
+		if !strings.HasPrefix(url, "http") {
+			url = "https://nginx.org" + url
+		}
+		if _, exists := versions[full]; !exists {
+			versions[full] = url
+		}
 	})
 
 	return versions, nil

@@ -64,7 +64,7 @@ func (m databaseManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m databaseManagerModel) updateMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	const optionCount = 3 // Buat, Hapus, Kembali
+	const optionCount = 3 // Create, Delete, Back
 	switch msg.String() {
 	case "ctrl+c", "esc":
 		m.cancelled = true
@@ -103,7 +103,7 @@ func (m databaseManagerModel) updateSelectDelete(msg tea.KeyMsg) (tea.Model, tea
 		m.cancelled = true
 		return m, tea.Quit
 	case "esc":
-		// kembali ke menu utama, bukan keluar
+		// Return to the main menu instead of exiting.
 		m.mode = modeMenu
 		m.cursor = 1
 		return m, nil
@@ -135,11 +135,11 @@ func (m databaseManagerModel) View() string {
 
 func (m databaseManagerModel) databaseListRows() []string {
 	rows := []string{
-		titleStyle.Render("Database yang tersedia"),
+		titleStyle.Render("Available Databases"),
 		fmt.Sprintf("  %-32s %-24s %s", "NAMA", "USERNAME", "PORT"),
 	}
 	if len(m.databases) == 0 {
-		rows = append(rows, muted.Render("  (belum ada database aplikasi)"))
+		rows = append(rows, muted.Render("  (no application databases yet)"))
 	}
 	for _, database := range m.databases {
 		rows = append(rows, fmt.Sprintf("  %-32s %-24s %d", database.Name, database.User, database.Port))
@@ -155,12 +155,12 @@ func (m databaseManagerModel) viewMenu() string {
 	}
 	rows = append(rows, m.databaseListRows()...)
 
-	options := []string{"Buat database", "Hapus database", "Kembali ke menu awal GACOR"}
+	options := []string{"Create database", "Delete database", "Back to the GACOR main menu"}
 	rows = append(rows, "", titleStyle.Render("Menu"))
 	for i, option := range options {
 		label := option
 		if i == 1 && len(m.databases) == 0 {
-			label += " (tidak ada database)"
+			label += " (no databases)"
 		}
 		if i == m.cursor {
 			rows = append(rows, neon.Render("▶ "+label))
@@ -169,9 +169,9 @@ func (m databaseManagerModel) viewMenu() string {
 		}
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, rows...)
-	hints := bright.Render("↑↓") + muted.Render(" pilih  ") +
-		bright.Render("enter") + muted.Render(" konfirmasi  ") +
-		bright.Render("esc") + muted.Render(" kembali")
+	hints := bright.Render("↑↓") + muted.Render(" navigate  ") +
+		bright.Render("enter") + muted.Render(" confirm  ") +
+		bright.Render("esc") + muted.Render(" back")
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		logo(), "",
 		panel.Render(body),
@@ -182,8 +182,8 @@ func (m databaseManagerModel) viewMenu() string {
 
 func (m databaseManagerModel) viewSelectDelete() string {
 	rows := []string{
-		titleStyle.Render("Pilih database yang akan dihapus"),
-		muted.Render("Tindakan ini tidak dapat dibatalkan."),
+		titleStyle.Render("Select a database to delete"),
+		muted.Render("This action cannot be undone."),
 		"",
 	}
 	for i, database := range m.databases {
@@ -195,9 +195,9 @@ func (m databaseManagerModel) viewSelectDelete() string {
 		}
 	}
 	body := lipgloss.JoinVertical(lipgloss.Left, rows...)
-	hints := bright.Render("↑↓") + muted.Render(" pilih  ") +
-		bright.Render("enter") + muted.Render(" hapus  ") +
-		bright.Render("esc") + muted.Render(" batal")
+	hints := bright.Render("↑↓") + muted.Render(" navigate  ") +
+		bright.Render("enter") + muted.Render(" delete  ") +
+		bright.Render("esc") + muted.Render(" cancel")
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		logo(), "",
 		panel.Render(body),

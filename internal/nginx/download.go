@@ -19,12 +19,12 @@ func DownloadFromURL(version, url string, onEvent func(stage, label string, done
 	}
 
 	if err := downloadFileWithProgress(zipPath, url, label, onEvent); err != nil {
-		return fmt.Errorf("download gagal: %w", err)
+		return fmt.Errorf("download failed: %w", err)
 	}
 
 	onEvent("extract", label, 0, 0)
 	if err := unzipWindows(zipPath, config.NginxDir()); err != nil {
-		return fmt.Errorf("extract gagal: %w", err)
+		return fmt.Errorf("extraction failed: %w", err)
 	}
 
 	os.Remove(zipPath)

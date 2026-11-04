@@ -11,13 +11,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// FetchAvailableVersions scrapes windows.php.net dan return map[version]url
+// FetchAvailableVersions scrapes windows.php.net and returns a map of versions to URLs.
 func FetchAvailableVersions() (map[string]string, error) {
 	baseURL := "https://windows.php.net/downloads/releases/"
 
 	resp, err := http.Get(baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("gagal fetch: %w", err)
+		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	resp.Body.Close()
@@ -47,13 +47,13 @@ func FetchAvailableVersions() (map[string]string, error) {
 	return versions, nil
 }
 
-// FetchPrereleaseVersions scrape versi pre-release (RC/dev) dari windows.php.net/downloads/qa/
+// FetchPrereleaseVersions scrapes pre-release (RC/dev) versions from windows.php.net/downloads/qa/.
 func FetchPrereleaseVersions() (map[string]string, error) {
 	baseURL := "https://windows.php.net/downloads/qa/"
 
 	resp, err := http.Get(baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("gagal fetch: %w", err)
+		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	resp.Body.Close()
@@ -62,7 +62,7 @@ func FetchPrereleaseVersions() (map[string]string, error) {
 	}
 
 	versions := map[string]string{}
-	// Tangkap suffix "RC4" atau "-dev" sebelum "-nts-Win32-..."
+	// Capture the "RC4" or "-dev" suffix before "-nts-Win32-...".
 	re := regexp.MustCompile(`php-(\d+\.\d+\.\d+(?:RC\d+|-dev|alpha\d+|beta\d+))-nts-Win32-vs\d+-x64\.zip$`)
 
 	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
@@ -71,7 +71,7 @@ func FetchPrereleaseVersions() (map[string]string, error) {
 		if len(matches) < 2 {
 			return
 		}
-		version := matches[1] // contoh: "8.6.0RC4" atau "8.3.34-dev"
+		version := matches[1] // e.g. "8.6.0RC4" or "8.3.34-dev"
 		url := href
 		if !strings.HasPrefix(url, "http") {
 			url = baseURL + filepath.Base(href)
@@ -83,7 +83,6 @@ func FetchPrereleaseVersions() (map[string]string, error) {
 
 	return versions, nil
 }
-
 
 func SortedVersions(versions map[string]string) []string {
 	keys := make([]string, 0, len(versions))

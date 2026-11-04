@@ -35,11 +35,11 @@ func (postgreSQLDriver) ValidateSetup(name, user string) error {
 		return err
 	}
 	if strings.EqualFold(user, "postgres") {
-		return fmt.Errorf("nama user postgres sudah digunakan PostgreSQL")
+		return fmt.Errorf("PostgreSQL username is already in use")
 	}
 	switch strings.ToLower(name) {
 	case "postgres", "template0", "template1":
-		return fmt.Errorf("nama database %s sudah digunakan PostgreSQL", name)
+		return fmt.Errorf("database name %s is already in use by PostgreSQL", name)
 	}
 	return nil
 }
@@ -70,7 +70,7 @@ func (driver postgreSQLDriver) InitializeAndStart(ctx context.Context, instance 
 
 func (postgreSQLDriver) Start(instance Instance) error {
 	if portInUse(instance.Port) {
-		return fmt.Errorf("port %d sudah digunakan; tidak akan memulai database agar tidak terhubung ke instance lain", instance.Port)
+		return fmt.Errorf("port %d is already in use; refusing to start the database to avoid connecting to another instance", instance.Port)
 	}
 	installDir := databaseInstallDir(instance)
 	pgCtl, err := findExecutable(installDir, "pg_ctl.exe")
@@ -83,11 +83,11 @@ func (postgreSQLDriver) Start(instance Instance) error {
 		"-o", fmt.Sprintf("-p %d -h 127.0.0.1", instance.Port), "-w")
 	output, err := cmd.CombinedOutput()
 	if err != nil && !strings.Contains(strings.ToLower(string(output)), "already running") {
-		return fmt.Errorf("gagal menjalankan PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("failed to start PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	if err := waitForPort(context.Background(), instance.Port); err != nil {
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("%w; gagal menghentikan instance PostgreSQL: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop PostgreSQL instance: %v", err, stopErr)
 		}
 		return err
 	}
@@ -102,7 +102,7 @@ func (postgreSQLDriver) Stop(instance Instance, _ string) error {
 	}
 	dataDir := dataDirectory(instance.Engine, instance.Version)
 	if err := stopPostgresServer(pgCtl, dataDir); err != nil {
-		return fmt.Errorf("gagal menghentikan PostgreSQL: %w", err)
+		return fmt.Errorf("failed to stop PostgreSQL: %w", err)
 	}
 	return waitForPortClosed(instance.Port)
 }
@@ -113,19 +113,19 @@ func (postgreSQLDriver) CreateDatabase(instance Instance, name, adminPassword st
 	}
 	sql := fmt.Sprintf("CREATE DATABASE %s OWNER %s;\n",
 		quotePostgresIdentifier(name), quotePostgresIdentifier(instance.User))
-	return runPostgreSQLSQL(instance, adminPassword, sql, "membuat database "+name)
+	return runPostgreSQLSQL(instance, adminPassword, sql, "creating database "+name)
 }
 
 func (postgreSQLDriver) DeleteDatabase(instance Instance, name, adminPassword string) error {
 	if !ValidIdentifier(name) {
-		return fmt.Errorf("nama database tidak valid: %s", name)
+		return fmt.Errorf("invalid database name: %s", name)
 	}
 	switch strings.ToLower(name) {
 	case "postgres", "template0", "template1":
-		return fmt.Errorf("database %s tidak dapat dihapus", name)
+		return fmt.Errorf("database %s cannot be deleted", name)
 	}
 	sql := "DROP DATABASE " + quotePostgresIdentifier(name) + ";\n"
-	return runPostgreSQLSQL(instance, adminPassword, sql, "menghapus database "+name)
+	return runPostgreSQLSQL(instance, adminPassword, sql, "deleting database "+name)
 }
 
 func (postgreSQLDriver) ListDatabases(instance Instance, adminPassword string) ([]DatabaseInfo, error) {
@@ -144,7 +144,7 @@ func (postgreSQLDriver) ListDatabases(instance Instance, adminPassword string) (
 	cmd.Env = environmentWith("PGPASSWORD", adminPassword)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("gagal mengambil daftar database: %w: %s", err, redactDatabasePassword(string(output), adminPassword))
+		return nil, fmt.Errorf("failed to list databases: %w: %s", err, redactDatabasePassword(string(output), adminPassword))
 	}
 	return parseDatabaseList(string(output), instance.Port)
 }
@@ -170,7 +170,7 @@ func runPostgreSQLSQL(instance Instance, password, sql, action string) error {
 	cmd.Stdin = strings.NewReader(sql)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("gagal %s: %w: %s", action, err, redactDatabasePassword(string(output), password))
+		return fmt.Errorf("failed %s: %w: %s", action, err, redactDatabasePassword(string(output), password))
 	}
 	return nil
 }
@@ -214,7 +214,7 @@ func initializePostgreSQL(ctx context.Context, installDir, dataDir, password str
 	cmd := exec.CommandContext(ctx, initdb, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("gagal inisialisasi PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("failed to initialize PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }
@@ -235,15 +235,15 @@ func configureAndStartPostgres(ctx context.Context, installDir, dataDir string, 
 	output, err := start.CombinedOutput()
 	if err != nil {
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("gagal menjalankan PostgreSQL: %w: %s; gagal menghentikan instance: %v",
+			return fmt.Errorf("failed to start PostgreSQL: %w: %s; failed to stop instance: %v",
 				err, strings.TrimSpace(string(output)), stopErr)
 		}
-		return fmt.Errorf("gagal menjalankan PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("failed to start PostgreSQL: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	notify("start")
 	if err := waitForPort(ctx, instance.Port); err != nil {
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("%w; gagal menghentikan instance PostgreSQL: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop PostgreSQL instance: %v", err, stopErr)
 		}
 		return err
 	}
@@ -252,7 +252,7 @@ func configureAndStartPostgres(ctx context.Context, installDir, dataDir string, 
 	psql, err := findExecutable(installDir, "psql.exe")
 	if err != nil {
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("%w; gagal menghentikan instance PostgreSQL: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop PostgreSQL instance: %v", err, stopErr)
 		}
 		return err
 	}
@@ -278,14 +278,14 @@ func configureAndStartPostgres(ctx context.Context, installDir, dataDir string, 
 	if err != nil {
 		details := strings.ReplaceAll(strings.TrimSpace(string(output)), password, "[redacted]")
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("gagal membuat database/user PostgreSQL: %w: %s; gagal menghentikan instance: %v",
+			return fmt.Errorf("failed to create PostgreSQL database/user: %w: %s; failed to stop instance: %v",
 				err, details, stopErr)
 		}
-		return fmt.Errorf("gagal membuat database/user PostgreSQL: %w: %s", err, details)
+		return fmt.Errorf("failed to create PostgreSQL database/user: %w: %s", err, details)
 	}
 	if err := ctx.Err(); err != nil {
 		if stopErr := stopPostgresServer(pgCtl, dataDir); stopErr != nil {
-			return fmt.Errorf("%w; gagal menghentikan instance PostgreSQL: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop PostgreSQL instance: %v", err, stopErr)
 		}
 		return err
 	}
@@ -309,7 +309,7 @@ func fetchPostgreSQL() ([]Release, error) {
 	const indexURL = "https://ftp.postgresql.org/pub/source/"
 	body, err := fetchText(indexURL)
 	if err != nil {
-		return nil, fmt.Errorf("gagal mengambil versi PostgreSQL dari ftp.postgresql.org: %w", err)
+		return nil, fmt.Errorf("failed to fetch PostgreSQL versions from ftp.postgresql.org: %w", err)
 	}
 
 	directoryRE := regexp.MustCompile(`href="v(\d+\.\d+(?:\.\d+)?)/"`)
@@ -334,14 +334,14 @@ func fetchPostgreSQL() ([]Release, error) {
 		archiveURL := "https://get.enterprisedb.com/postgresql/postgresql-" + version + "-1-windows-x64-binaries.zip"
 		ok, err := archiveAvailable(archiveURL)
 		if err != nil {
-			return nil, fmt.Errorf("gagal memeriksa arsip PostgreSQL %s: %w", version, err)
+			return nil, fmt.Errorf("failed to check PostgreSQL archive %s: %w", version, err)
 		}
 		if ok {
 			releases = append(releases, Release{Version: version, URL: archiveURL})
 		}
 	}
 	if len(releases) == 0 {
-		return nil, fmt.Errorf("tidak menemukan arsip binary Windows x64 PostgreSQL yang tersedia dari EDB")
+		return nil, fmt.Errorf("no available PostgreSQL Windows x64 binary archive found from EDB")
 	}
 	sortReleases(releases)
 	return releases, nil

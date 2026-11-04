@@ -20,7 +20,7 @@ func ConfPath(version string) string {
 	return filepath.Join(config.NginxDir(), "nginx-"+version, "conf", "nginx.conf")
 }
 
-// RemoveVersion menghapus folder instalasi Nginx versi tertentu
+// RemoveVersion removes the installation directory for the specified Nginx version.
 func RemoveVersion(version string) error {
 	dir := filepath.Join(config.NginxDir(), "nginx-"+version)
 	return os.RemoveAll(dir)

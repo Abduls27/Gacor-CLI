@@ -74,7 +74,7 @@ func (driver mysqlDriver) InitializeAndStart(ctx context.Context, instance Insta
 	if err := ctx.Err(); err != nil {
 		if stopErr := runMySQLAdmin(installDir, instance, "root", password, "shutdown"); stopErr != nil {
 			_ = process.Stop("database")
-			return fmt.Errorf("%w; gagal menghentikan MySQL setelah pembatalan: %v", err, stopErr)
+			return fmt.Errorf("%w; failed to stop MySQL after cancellation: %v", err, stopErr)
 		}
 		return err
 	}
@@ -117,10 +117,10 @@ func startMySQLInstance(instance Instance) error {
 		return err
 	}
 	if portInUse(instance.Port) {
-		return fmt.Errorf("port %d sudah digunakan; tidak akan memulai database agar tidak terhubung ke instance lain", instance.Port)
+		return fmt.Errorf("port %d is already in use; refusing to start the database to avoid connecting to another instance", instance.Port)
 	}
 	if err := writeMySQLConfig(executableDirectory(serverPath), dataDirectory(instance.Engine, instance.Version), instance); err != nil {
-		return fmt.Errorf("gagal memperbarui konfigurasi %s: %w", instance.Engine, err)
+		return fmt.Errorf("failed to update %s configuration: %w", instance.Engine, err)
 	}
 	if err := startMySQLServer(serverPath, installDir, instance); err != nil {
 		return err
@@ -137,7 +137,7 @@ func stopMySQLInstance(instance Instance, password string) error {
 	if err := runMySQLAdmin(installDir, instance, "root", password, "shutdown"); err != nil {
 		if running, _ := process.IsRunning("database"); running {
 			if stopErr := process.Stop("database"); stopErr != nil {
-				return fmt.Errorf("%w; gagal menghentikan proses database tanpa password: %v", err, stopErr)
+				return fmt.Errorf("%w; failed to stop database process without a password: %v", err, stopErr)
 			}
 		}
 	}
@@ -169,7 +169,7 @@ func createMySQLDatabaseByName(instance Instance, name, adminPassword string) er
 	cmd.Stdin = strings.NewReader(sql)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return mysqlOperationError(instance.Engine, "membuat", name, err, string(output), adminPassword)
+		return mysqlOperationError(instance.Engine, "creating", name, err, string(output), adminPassword)
 	}
 	return nil
 }
@@ -180,7 +180,7 @@ func deleteMySQLDatabase(instance Instance, name, adminPassword string) error {
 	}
 	switch strings.ToLower(name) {
 	case "mysql", "information_schema", "performance_schema", "sys":
-		return fmt.Errorf("database %s tidak dapat dihapus", name)
+		return fmt.Errorf("database %s cannot be deleted", name)
 	}
 	client, err := mysqlClient(instance)
 	if err != nil {
@@ -191,7 +191,7 @@ func deleteMySQLDatabase(instance Instance, name, adminPassword string) error {
 	cmd.Stdin = strings.NewReader("DROP DATABASE " + quoteMySQLIdentifier(name) + ";\n")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return mysqlOperationError(instance.Engine, "menghapus", name, err, string(output), adminPassword)
+		return mysqlOperationError(instance.Engine, "deleting", name, err, string(output), adminPassword)
 	}
 	return nil
 }
@@ -202,14 +202,14 @@ func validateMySQLSetup(engine Engine, name, user string) error {
 	}
 	switch strings.ToLower(name) {
 	case "mysql", "information_schema", "performance_schema", "sys":
-		return fmt.Errorf("nama database %s sudah digunakan server", name)
+		return fmt.Errorf("database name %s is already in use by the server", name)
 	}
 	switch strings.ToLower(user) {
 	case "mysql.session", "mysql.sys":
-		return fmt.Errorf("nama user %s sudah digunakan server", user)
+		return fmt.Errorf("username %s is already in use by the server", user)
 	case "mariadb.sys":
 		if engine == MariaDB {
-			return fmt.Errorf("nama user %s sudah digunakan server", user)
+			return fmt.Errorf("username %s is already in use by the server", user)
 		}
 	}
 	return nil
@@ -250,20 +250,20 @@ func mysqlClient(instance Instance) (string, error) {
 func mysqlOperationError(engine Engine, action, name string, err error, output, password string) error {
 	details := redactDatabasePassword(output, password)
 	if strings.Contains(details, "ERROR 1044") {
-		return fmt.Errorf("gagal %s database %s: akun admin %s tidak memiliki hak yang diperlukan: %w: %s", action, name, engine, err, details)
+		return fmt.Errorf("failed %s database %s: admin account %s lacks the required privileges: %w: %s", action, name, engine, err, details)
 	}
 	if strings.Contains(strings.ToLower(details), "pipe") {
-		return fmt.Errorf("gagal %s database %s: named pipe %s belum aktif. Hentikan instance lama, lalu jalankan `gacor database start`: %w: %s", action, name, engine, err, details)
+		return fmt.Errorf("failed %s database %s: named pipe %s is not active. Stop the old instance, then run `gacor database start`: %w: %s", action, name, engine, err, details)
 	}
-	return fmt.Errorf("gagal %s database %s: %w: %s", action, name, err, details)
+	return fmt.Errorf("failed %s database %s: %w: %s", action, name, err, details)
 }
 
 func mysqlListError(engine Engine, err error, output, password string) error {
 	details := redactDatabasePassword(output, password)
 	if strings.Contains(strings.ToLower(details), "pipe") {
-		return fmt.Errorf("named pipe %s tidak tersedia; hentikan instance lama, lalu jalankan `gacor database start`: %w: %s", engine, err, details)
+		return fmt.Errorf("named pipe %s is unavailable; stop the old instance, then run `gacor database start`: %w: %s", engine, err, details)
 	}
-	return fmt.Errorf("gagal mengambil daftar database: %w: %s", err, details)
+	return fmt.Errorf("failed to list databases: %w: %s", err, details)
 }
 
 func initializeMySQL(ctx context.Context, serverPath, installDir, dataDir string) error {
@@ -274,7 +274,7 @@ func initializeMySQL(ctx context.Context, serverPath, installDir, dataDir string
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("gagal inisialisasi MySQL: %w: %s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("failed to initialize MySQL: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }
@@ -365,10 +365,10 @@ func mysqlCreateError(name string, err error, output, password string) error {
 		details = strings.ReplaceAll(details, password, "[redacted]")
 	}
 	if strings.Contains(details, "ERROR 1044") {
-		return fmt.Errorf("gagal membuat database %s: akun admin root@127.0.0.1 tidak memiliki hak CREATE global. Instance ini dibuat dengan konfigurasi lama; diperlukan hak CREATE ON *.* untuk akun tersebut: %w: %s",
+		return fmt.Errorf("failed to create database %s: admin account root@127.0.0.1 lacks the global CREATE privilege. This instance was created with an older configuration; the account requires CREATE ON *.*: %w: %s",
 			name, err, details)
 	}
-	return fmt.Errorf("gagal membuat database/user MySQL: %w: %s", err, details)
+	return fmt.Errorf("failed to create MySQL database/user: %w: %s", err, details)
 }
 
 func mysqlNamedPipeArgs(args ...string) []string {
@@ -410,7 +410,7 @@ func runMySQLAdmin(installDir string, instance Instance, username, password, act
 	if password != "" {
 		details = strings.ReplaceAll(details, password, "[redacted]")
 	}
-	return fmt.Errorf("gagal menjalankan %s untuk %s: named pipe: %v: %s; TCP: %w: %s",
+	return fmt.Errorf("failed to run %s for %s: named pipe: %v: %s; TCP: %w: %s",
 		action, instance.Engine, pipeErr, strings.TrimSpace(string(output)), tcpErr, details)
 }
 
@@ -436,7 +436,7 @@ func fetchMySQL() ([]Release, error) {
 		})
 	}
 	if len(releases) == 0 {
-		return fetchMySQLRepositories(fmt.Errorf("tidak menemukan arsip Windows x64 di %s", pageURL))
+		return fetchMySQLRepositories(fmt.Errorf("no Windows x64 archive found at %s", pageURL))
 	}
 	return latestPerSeries(releases), nil
 }
@@ -465,11 +465,11 @@ func fetchMySQLRepositories(pageErr error) ([]Release, error) {
 		}
 	}
 	if len(releases) == 0 {
-		return nil, fmt.Errorf("tidak dapat mengambil versi MySQL dari halaman unduhan (%v) maupun repository resmi: %s",
+		return nil, fmt.Errorf("unable to fetch MySQL versions from the download page (%v) or the official repository: %s",
 			pageErr, strings.Join(trackErrors, "; "))
 	}
 	if len(trackErrors) > 0 {
-		return nil, fmt.Errorf("gagal mengambil semua track resmi MySQL: %s", strings.Join(trackErrors, "; "))
+		return nil, fmt.Errorf("failed to fetch all official MySQL release tracks: %s", strings.Join(trackErrors, "; "))
 	}
 	return latestPerSeries(releases), nil
 }
@@ -495,7 +495,7 @@ func fetchMySQLRepositoryTrack(track string) ([]Release, error) {
 		}
 	}
 	if primaryPath == "" {
-		return nil, fmt.Errorf("metadata repository tidak memiliki primary index")
+		return nil, fmt.Errorf("repository metadata has no primary index")
 	}
 	compressed, err := fetchBytes(baseURL + primaryPath)
 	if err != nil {
@@ -503,7 +503,7 @@ func fetchMySQLRepositoryTrack(track string) ([]Release, error) {
 	}
 	reader, err := gzip.NewReader(bytes.NewReader(compressed))
 	if err != nil {
-		return nil, fmt.Errorf("metadata repository gzip tidak valid: %w", err)
+		return nil, fmt.Errorf("repository gzip metadata is invalid: %w", err)
 	}
 	defer reader.Close()
 
@@ -517,7 +517,7 @@ func fetchMySQLRepositoryTrack(track string) ([]Release, error) {
 		} `xml:"package"`
 	}
 	if err := xml.NewDecoder(reader).Decode(&packages); err != nil {
-		return nil, fmt.Errorf("metadata package MySQL tidak valid: %w", err)
+		return nil, fmt.Errorf("MySQL package metadata is invalid: %w", err)
 	}
 
 	seen := map[string]bool{}
@@ -529,7 +529,7 @@ func fetchMySQLRepositoryTrack(track string) ([]Release, error) {
 		version := pkg.Version.Value
 		parts := strings.Split(version, ".")
 		if len(parts) < 2 {
-			return nil, fmt.Errorf("versi repository tidak valid: %s", version)
+			return nil, fmt.Errorf("invalid repository version: %s", version)
 		}
 		directory := strings.Join(parts[:2], ".")
 		archiveURL := "https://cdn.mysql.com/Downloads/MySQL-" + directory + "/mysql-" + version + "-winx64.zip"
@@ -544,7 +544,7 @@ func fetchMySQLRepositoryTrack(track string) ([]Release, error) {
 		releases = append(releases, Release{Version: version, URL: archiveURL})
 	}
 	if len(releases) == 0 {
-		return nil, fmt.Errorf("repository tidak mengumumkan arsip server Windows x64 yang tersedia")
+		return nil, fmt.Errorf("repository does not list an available Windows x64 server archive")
 	}
 	return latestPerSeries(releases), nil
 }

@@ -87,7 +87,7 @@ func (m selectionModel) View() string {
 	var rows []string
 	matches := m.filtered()
 	if len(matches) == 0 {
-		rows = append(rows, muted.Render("  (tidak ada pilihan yang cocok)"))
+		rows = append(rows, muted.Render("  (no matching options)"))
 	}
 	for i, itemIndex := range matches {
 		if i == m.cursor {
@@ -103,9 +103,9 @@ func (m selectionModel) View() string {
 			m.input.View(), "",
 			body)
 	}
-	hints := bright.Render("↑↓") + muted.Render(" pilih  ") +
-		bright.Render("enter") + muted.Render(" konfirmasi  ") +
-		bright.Render("esc") + muted.Render(" batal")
+	hints := bright.Render("↑↓") + muted.Render(" navigate  ") +
+		bright.Render("enter") + muted.Render(" confirm  ") +
+		bright.Render("esc") + muted.Render(" cancel")
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		logo(), "",
 		panel.Render(body),
@@ -133,11 +133,11 @@ func SelectIndexed(title string, items []string) (int, error) {
 // SelectIndexedWithSearch optionally displays a text input for filtering choices.
 func SelectIndexedWithSearch(title string, items []string, searchable bool) (int, error) {
 	if len(items) == 0 {
-		return -1, fmt.Errorf("tidak ada pilihan yang tersedia")
+		return -1, fmt.Errorf("no options available")
 	}
 
 	ti := textinput.New()
-	ti.Placeholder = "Cari..."
+	ti.Placeholder = "Search..."
 	ti.Prompt = ""
 	if searchable {
 		ti.Focus()

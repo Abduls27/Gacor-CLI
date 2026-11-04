@@ -14,7 +14,7 @@ func Update(domains []string) error {
 		return err
 	}
 
-	// Hapus semua baris gacor lama
+	// Remove all existing GACOR lines.
 	lines := strings.Split(string(data), "\n")
 	cleaned := make([]string, 0, len(lines))
 	for _, line := range lines {
@@ -23,7 +23,7 @@ func Update(domains []string) error {
 		}
 	}
 
-	// Trim trailing newlines lalu tambah domain baru
+	// Trim trailing newlines, then add the new domains.
 	content := strings.TrimRight(strings.Join(cleaned, "\n"), "\n\r")
 	content += "\n"
 	for _, domain := range domains {
@@ -32,7 +32,6 @@ func Update(domains []string) error {
 
 	return os.WriteFile(hostsPath, []byte(content), 0644)
 }
-
 
 func NeedsUpdate(domains []string) bool {
 	data, err := os.ReadFile(hostsPath)

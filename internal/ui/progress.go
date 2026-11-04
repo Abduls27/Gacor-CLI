@@ -53,7 +53,7 @@ func (m progModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m progModel) View() string {
 	if m.title == "" {
-		m.title = "Menyiapkan..."
+		m.title = "Preparing..."
 	}
 
 	var pct float64
@@ -77,7 +77,7 @@ func (m progModel) View() string {
 			muted.Render(fmt.Sprintf("%.0f%%  %.1f/%.1f MB", pct*100, mb(m.done), mb(m.total)))
 	}
 
-	hints := bright.Render("esc") + muted.Render(" batal")
+	hints := bright.Render("esc") + muted.Render(" cancel")
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		logo(), "",
 		panel.Render(body),
@@ -97,8 +97,8 @@ func (m progModel) View() string {
 	)
 }
 
-// RunWithProgress menjalankan task (func yang mengirim ProgressEvent via onEvent)
-// sambil menampilkan layar progress. task harus memanggil onEvent(ProgressEvent{...}).
+// RunWithProgress executes a task that sends ProgressEvent values through onEvent
+// while displaying the progress screen. The task must call onEvent(ProgressEvent{...}).
 func RunWithProgress(task func(onEvent func(ProgressEvent)) error) error {
 	return runWithProgress(func(_ context.Context, onEvent func(ProgressEvent)) error {
 		return task(onEvent)
@@ -155,12 +155,12 @@ func runWithProgress(task func(context.Context, func(ProgressEvent)) error, canc
 				return taskErr
 			}
 		}
-		fmt.Println(muted.Render("Dibatalkan."))
-		return fmt.Errorf("dibatalkan")
+		fmt.Println(muted.Render("Canceled."))
+		return fmt.Errorf("canceled")
 	}
 	if fm.err != nil {
 		return fm.err
 	}
-	fmt.Println(neon.Render("✓ ") + bright.Render(fm.title+" selesai"))
+	fmt.Println(neon.Render("✓ ") + bright.Render(fm.title+" complete"))
 	return nil
 }

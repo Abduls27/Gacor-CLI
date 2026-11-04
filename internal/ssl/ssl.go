@@ -44,7 +44,7 @@ func Download() error {
 
 	resp, err := http.Get(mkcertURL)
 	if err != nil {
-		return fmt.Errorf("gagal download mkcert: %w", err)
+		return fmt.Errorf("failed to download mkcert: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -72,7 +72,7 @@ func GenerateCert(domains []string) error {
 	}
 
 	for _, domain := range domains {
-		fmt.Printf("Generating cert untuk %s...\n", domain)
+		fmt.Printf("Generating certificate for %s...\n", domain)
 		args := []string{
 			"-cert-file", CertPath(domain),
 			"-key-file", KeyPath(domain),
@@ -82,13 +82,13 @@ func GenerateCert(domains []string) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("gagal generate cert %s: %w", domain, err)
+			return fmt.Errorf("failed to generate certificate %s: %w", domain, err)
 		}
 	}
 	return nil
 }
 
 func CertExists(domain string) bool {
-    _, err := os.Stat(CertPath(domain))
-    return err == nil
+	_, err := os.Stat(CertPath(domain))
+	return err == nil
 }

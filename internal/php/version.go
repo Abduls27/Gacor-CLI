@@ -2,7 +2,7 @@ package php
 
 import "strings"
 
-// MajorMinor ambil "8.4" dari "8.4.26"
+// MajorMinor extracts "8.4" from "8.4.26".
 func MajorMinor(fullVersion string) string {
 	parts := strings.SplitN(fullVersion, ".", 3)
 	if len(parts) < 2 {
@@ -11,7 +11,7 @@ func MajorMinor(fullVersion string) string {
 	return parts[0] + "." + parts[1]
 }
 
-// LatestFor cari versi terbaru di map `versions` (full version) untuk major.minor tertentu
+// LatestFor finds the latest full version for a specific major.minor in `versions`.
 func LatestFor(versions map[string]string, majorMinor string) (string, bool) {
 	var latest string
 	for full := range versions {

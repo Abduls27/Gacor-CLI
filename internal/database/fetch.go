@@ -36,7 +36,7 @@ func archiveAvailable(archiveURL string) (bool, error) {
 		return false, nil
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return false, fmt.Errorf("server merespons HTTP %d untuk %s", resp.StatusCode, archiveURL)
+		return false, fmt.Errorf("server returned HTTP %d for %s", resp.StatusCode, archiveURL)
 	}
 	return true, nil
 }
@@ -61,7 +61,7 @@ func fetchBytes(source string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("server merespons HTTP %d", resp.StatusCode)
+		return nil, fmt.Errorf("server returned HTTP %d", resp.StatusCode)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -76,7 +76,7 @@ func fetchXML(source string, target any) error {
 		return err
 	}
 	if err := xml.Unmarshal(body, target); err != nil {
-		return fmt.Errorf("metadata XML tidak valid: %w", err)
+		return fmt.Errorf("invalid XML metadata: %w", err)
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func fetchJSON(source string, target any) error {
 		return err
 	}
 	if err := json.Unmarshal([]byte(body), target); err != nil {
-		return fmt.Errorf("metadata JSON tidak valid: %w", err)
+		return fmt.Errorf("invalid JSON metadata: %w", err)
 	}
 	return nil
 }

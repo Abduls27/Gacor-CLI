@@ -159,7 +159,7 @@ http {
 `, domain, domain, root, certFile, keyFile))
 	}
 
-	// Server block untuk akses via IP — di luar loop, pakai project pertama
+	// Keep the IP-access server block outside the loop and use the first project.
 	if len(projectPaths) > 0 {
 		defaultRoot := filepath.ToSlash(filepath.Join(projectPaths[0], "public"))
 		blocks.WriteString(fmt.Sprintf(`    server {

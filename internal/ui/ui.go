@@ -55,7 +55,7 @@ var (
 		Foreground(lipgloss.Color("243"))
 )
 
-const version = "v1.0.0"
+const version = "v1.2.0"
 const welcome = "Welcome to Gacor CLI"
 const description = "Manage PHP, Nginx, and databases from your terminal"
 
@@ -71,7 +71,7 @@ func Banner() {
 	fmt.Println(white.Render(description))
 	fmt.Println()
 
-	// Tip line di bawah seperti opencode
+	// Tip line below, similar to OpenCode.
 	dot := primary.Render("●")
 	tipLabel := cyan.Copy().Bold(true).Render("Tip")
 	tipText := muted.Render("Run ") + primary.Render("gacor run") + muted.Render(" to start PHP & Nginx · ") + primary.Render("gacor --help") + muted.Render(" for commands")
@@ -187,7 +187,7 @@ var (
 	utcStyle   = lipgloss.NewStyle().Foreground(colorMuted)
 )
 
-// StepTimed menampilkan satu baris log dengan jam (putih) dan offset UTC (muted) di depan.
+// StepTimed displays one log line with a timestamp and UTC offset at the start.
 func StepTimed(msg string) {
 	clock := time.Now().Format("15:04:05")
 	offset := time.Now().Format("-07:00") + " UTC"
@@ -198,9 +198,9 @@ func StepTimed(msg string) {
 	fmt.Println(ts + infoIcon.Render("●") + "  " + stepStyle.Render(msg))
 }
 
-// StepDetail menampilkan baris detail di bawah StepTimed, align dengan kolom pesan
-// (bukan kolom timestamp) — kosongkan posisi timestamp dengan spasi, bukan ulang jam.
+// StepDetail displays a detail line below StepTimed, aligned with the message column
+// (not the timestamp column) by padding the timestamp area with spaces.
 func StepDetail(msg string) {
-	indent := strings.Repeat(" ", 22+3) // sejajar dengan lebar timestamp + ikon + spasi
+	indent := strings.Repeat(" ", 22+3) // Align with the timestamp width, icon, and spacing.
 	fmt.Println(indent + muted.Render(msg))
 }

@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 $repo          = "Abduls27/Gacor-CLI"   # change to your owner/repo
 $installDir    = $env:GACOR_HOME
